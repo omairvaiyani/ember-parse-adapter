@@ -36,9 +36,14 @@ export default DS.Transform.extend({
       return null;
     }
 
+    var secureUrl;
+    if(serialized.url)
+        secureUrl = serialized.url.replace("http://", "https://s3.amazonaws.com/");
+      
     return File.create({
       name : serialized.name,
-      url  : serialized.url
+      url  : serialized.url,
+      secureUrl: secureUrl
     });
   },
 
