@@ -40,7 +40,7 @@ ParseUser.reopenClass({
     return adapter.ajax( adapter.buildURL( 'login' ), 'GET', { data: data } ).then(
       function( response ) {
         serializer.normalize( model, response );
-        var record = store.push( model, response );
+        var record = store.push( model.type, response );
         return record;
       },
       function( response ) {
@@ -63,7 +63,7 @@ ParseUser.reopenClass({
         serializer.normalize( model, response );
         response.email = response.email || data.email;
         response.username = response.username || data.username;
-        var record = store.push( model, response );
+        var record = store.push( model.type, response );
         return record;
       },
       function( response ) {

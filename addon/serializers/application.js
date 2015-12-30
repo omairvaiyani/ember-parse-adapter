@@ -4,13 +4,13 @@ import DS from 'ember-data';
 export default DS.RESTSerializer.extend({
 
     primaryKey: 'objectId',
-
+    
     extractArray: function (store, primaryType, payload) {
         var namespacedPayload = {};
         namespacedPayload[Ember.String.pluralize(primaryType.typeKey)] = payload.results;
 
         return this._super(store, primaryType, namespacedPayload);
-    },
+    }
 
     extractSingle: function (store, primaryType, payload, recordId) {
         var namespacedPayload = {};
@@ -169,6 +169,25 @@ export default DS.RESTSerializer.extend({
         }
     },
 
+    /**
+     * Serialize Has Many
+     *
+     * Array pointers are better off
+     * being handled without the
+     * 'AddUnique'/'Remove' operations.
+     * It seems that model.save() sends 
+     * the whole array anyways when saving
+     * parent objects.
+     * 
+     * More importantly, objects were not
+     * being removed from arrays because
+     * the 'AddUnique' op was added
+     * when it shouldn't be.
+     *
+     * @param snapshot
+     * @param json
+     * @param relationship
+     */
     serializeHasMany: function (snapshot, json, relationship) {
         var key = relationship.key,
             hasMany = snapshot.hasMany(key),
@@ -176,52 +195,19 @@ export default DS.RESTSerializer.extend({
             _this = this;
 
         if (hasMany && hasMany.get('length') > 0) {
-            json[key] = {'objects': []};
+            json[key] = [];
 
             if (options.relation) {
                 json[key].__op = 'AddRelation';
             }
 
-            if (options.array) {
-                json[key].__op = 'AddUnique';
-            }
-
             hasMany.forEach(function (child) {
-                json[key].objects.push({
+                json[key].push({
                     '__type': 'Pointer',
                     'className': _this.parseClassName(child.type.typeKey),
                     'objectId': child.id
                 });
             });
-
-            if (hasMany._deletedItems && hasMany._deletedItems.length) {
-                if (options.relation) {
-                    var addOperation = json[key],
-                        deleteOperation = {'__op': 'RemoveRelation', 'objects': []};
-
-                    hasMany._deletedItems.forEach(function (item) {
-                        deleteOperation.objects.push({
-                            '__type': 'Pointer',
-                            'className': item.type,
-                            'objectId': item.id
-                        });
-                    });
-
-                    json[key] = {'__op': 'Batch', 'ops': [addOperation, deleteOperation]};
-                }
-
-                if (options.array) {
-                    json[key].deleteds = {'__op': 'Remove', 'objects': []};
-
-                    hasMany._deletedItems.forEach(function (item) {
-                        json[key].deleteds.objects.push({
-                            '__type': 'Pointer',
-                            'className': item.type,
-                            'objectId': item.id
-                        });
-                    });
-                }
-            }
 
         } else {
             json[key] = [];
