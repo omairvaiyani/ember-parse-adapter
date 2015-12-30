@@ -10,7 +10,7 @@ export default DS.RESTSerializer.extend({
         namespacedPayload[Ember.String.pluralize(primaryType.typeKey)] = payload.results;
 
         return this._super(store, primaryType, namespacedPayload);
-    }
+    },
 
     extractSingle: function (store, primaryType, payload, recordId) {
         var namespacedPayload = {};
